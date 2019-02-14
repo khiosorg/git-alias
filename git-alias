@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+usage() {
+  echo "alias: usage: alias [-p] [name[=value] ... ]" >&2
+}
+
+full_usage() {
+  cat << EOS
+alias: alias [-p] [name[=value] ... ]
+    Define or display aliases.
+
+    Without arguments, `alias' prints the list of aliases in the reusable
+    form `alias NAME=VALUE' on standard output.
+
+    Otherwise, an alias is defined for each NAME whose VALUE is given.
+    A trailing space in VALUE causes the next word to be checked for
+    alias substitution when the alias is expanded.
+
+    Options:
+      -p	print all defined aliases in a reusable format
+
+    Exit Status:
+    alias returns true unless a NAME is supplied for which no alias has been
+    defined.
+EOS
+}
+
+parse_short_options() {
+  local opt=$1
+
+  if [[ $opt == *p* ]]; then
+    should_print_all=true
+    opt=${opt//p/}
+  fi
+
+  if [[ $opt ]]; then
+    echo "alias: -${opt:0:1}: invalid option" >&2
+    usage
+    exit 2
+  fi
+}
+
+should_print_all=false
+
+for arg in "$@"; do
+  case $arg in
+    -- )
+      shift
+      break
+      ;;
+
+    --help )
+      full_usage
+      exit 2
+      ;;
+
+    -?* )
+      parse_short_options "${arg:1}"
+      shift
+      ;;
+
+    * )
+      break
+      ;;
+  esac
+done
+
+if [ $# -eq 0 ]; then # including `git alias --'
+  should_print_all=true
+fi
+
+# Parsing of arguments is over.
+# Move on to the part of printing and/or definition of aliases.
