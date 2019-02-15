@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-readonly version=0.1.1
+readonly version=0.1.2
 
 usage() {
   echo "git-alias: usage: git alias [-p] [name[=value] ... ]" >&2
@@ -11,8 +11,8 @@ full_usage() {
 git-alias: git alias [-p] [name[=value] ... ]
     Define or display aliases.
 
-    Without arguments, `git alias' prints the list of aliases in the reusable
-    form `git alias NAME=VALUE' on standard output.
+    Without arguments, \`git alias' prints the list of aliases in the reusable
+    form \`git alias NAME=VALUE' on standard output.
 
     Otherwise, an alias is defined for each NAME whose VALUE is given.
     A trailing space in VALUE causes the next word to be checked for
@@ -25,7 +25,7 @@ git-alias: git alias [-p] [name[=value] ... ]
     alias returns true unless a NAME is supplied for which no alias has been
     defined.
 
-    Note: This message is quoted from Bash builtin `alias' command's help.
+    Note: This message is quoted from Bash builtin \`alias' command's help.
 EOS
 }
 
