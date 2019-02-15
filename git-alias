@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+readonly version=0.1.0
+
 usage() {
   echo "alias: usage: alias [-p] [name[=value] ... ]" >&2
 }
@@ -22,6 +24,8 @@ alias: alias [-p] [name[=value] ... ]
     Exit Status:
     alias returns true unless a NAME is supplied for which no alias has been
     defined.
+
+    Note: This message is quoted from Bash builtin `alias' command's help.
 EOS
 }
 
@@ -71,3 +75,65 @@ fi
 
 # Parsing of arguments is over.
 # Move on to the part of printing and/or definition of aliases.
+
+define() {
+  git config --global "alias.$1" "$2"
+  if [ $? -ne 0 ]; then
+    has_error=true
+  fi
+}
+
+print() {
+  local name=$1
+  local value
+
+  value=$(git config --global --get "alias.$name" 2> /dev/null)
+  if [ $? -eq 0 ]; then
+    stdout+="git alias $name='${value//\'/\'\\\'\'}'"'
+'
+  else
+    echo -n "$stdout"
+    echo "alias: $name: not found" >&2
+
+    stdout=""
+    has_error=true
+  fi
+}
+
+# Not only fetch the variable list
+# but validate the global `.gitconfig' file itself:
+# check if it exists and its format is valid.
+config_list=$(git config --global --list --name-only 2>&1)
+if [ $? -ne 0 ]; then
+  # The output is equivalent to an error message
+  # directly emitted by `git-config' under normal use.
+  echo "$config_list" >&2
+  exit 2
+fi
+
+stdout=""
+has_error=false
+
+if $should_print_all; then
+  while read -r name; do
+    print "$name"
+  done <<< $(sed -En "s/^alias\.//p" <<< $config_list | LANG=C sort)
+fi
+
+for arg in "$@"; do
+  case $arg in
+    [!=]*=* )
+      define "${arg%%=*}" "${arg#*=}"
+      ;;
+
+    * )
+      print "$arg"
+      ;;
+  esac
+done
+
+echo -n "$stdout"
+
+if $has_error; then
+  exit 1
+fi
