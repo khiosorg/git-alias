@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-readonly version=0.1.0
+readonly version=0.1.1
 
 usage() {
-  echo "alias: usage: alias [-p] [name[=value] ... ]" >&2
+  echo "git-alias: usage: git alias [-p] [name[=value] ... ]" >&2
 }
 
 full_usage() {
   cat << EOS
-alias: alias [-p] [name[=value] ... ]
+git-alias: git alias [-p] [name[=value] ... ]
     Define or display aliases.
 
-    Without arguments, `alias' prints the list of aliases in the reusable
-    form `alias NAME=VALUE' on standard output.
+    Without arguments, `git alias' prints the list of aliases in the reusable
+    form `git alias NAME=VALUE' on standard output.
 
     Otherwise, an alias is defined for each NAME whose VALUE is given.
     A trailing space in VALUE causes the next word to be checked for
@@ -38,7 +38,7 @@ parse_short_options() {
   fi
 
   if [[ $opt ]]; then
-    echo "alias: -${opt:0:1}: invalid option" >&2
+    echo "git-alias: -${opt:0:1}: invalid option" >&2
     usage
     exit 2
   fi
@@ -93,7 +93,7 @@ print() {
 '
   else
     echo -n "$stdout"
-    echo "alias: $name: not found" >&2
+    echo "git-alias: $name: not found" >&2
 
     stdout=""
     has_error=true
