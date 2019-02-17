@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
-readonly version=0.1.0
+readonly version=0.2.0
 
 usage() {
-  echo "git-unalias: usage: git unalias [-a] name [name ...]" >&2
+  echo "git-unalias: usage: git unalias [-ad] name [name ...]" >&2
 }
 
 full_usage() {
   cat << EOS
-git-unalias: git unalias [-a] name [name ...]
+git-unalias: git unalias [-ad] name [name ...]
     Remove each NAME from the list of defined aliases.
 
     Options:
       -a	remove all alias definitions
+      -d	print what would be removed without actually removing them
 
     Return success unless a NAME is not an existing alias.
 
@@ -28,6 +29,11 @@ parse_short_options() {
     opt=${opt//a/}
   fi
 
+  if [[ $opt == *d* ]]; then
+    should_dry_run=true
+    opt=${opt//d/}
+  fi
+
   if [[ $opt ]]; then
     echo "git-unalias: -${opt:0:1}: invalid option" >&2
     usage
@@ -36,6 +42,7 @@ parse_short_options() {
 }
 
 should_remove_all=false
+should_dry_run=false
 
 for arg in "$@"; do
   case $arg in
@@ -74,9 +81,16 @@ remove() {
 
   value=$(git config --global --get "alias.$name" 2> /dev/null)
   if [ $? -eq 0 ]; then
-    git config --global --unset-all "alias.$name"
+    if ! $should_dry_run; then
+      git config --global --unset-all "alias.$name"
+    fi
+    stdout+="git alias $name='${value//\'/\'\\\'\'}'"'
+'
   else
+    echo -n "$stdout"
     echo "git-unalias: $name: not found" >&2
+
+    stdout=""
     has_error=true
   fi
 }
@@ -92,7 +106,10 @@ if [ $? -ne 0 ]; then
   exit 2
 fi
 
+stdout=""
 has_error=false
+
+echo "Removing..."
 
 if $should_remove_all; then
   while read -r name; do
@@ -103,6 +120,8 @@ else
     remove "$arg"
   done
 fi
+
+echo -n "$stdout"
 
 if $has_error; then
   exit 1
