@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+readonly version=0.1.0
+
+usage() {
+  echo "git-unalias: usage: git unalias [-a] name [name ...]" >&2
+}
+
+full_usage() {
+  cat << EOS
+git-unalias: git unalias [-a] name [name ...]
+    Remove each NAME from the list of defined aliases.
+
+    Options:
+      -a	remove all alias definitions
+
+    Return success unless a NAME is not an existing alias.
+
+    Note: This message is quoted from Bash builtin \`unalias' command's help.
+EOS
+}
+
+parse_short_options() {
+  local opt=$1
+
+  if [[ $opt == *a* ]]; then
+    should_remove_all=true
+    opt=${opt//a/}
+  fi
+
+  if [[ $opt ]]; then
+    echo "git-unalias: -${opt:0:1}: invalid option" >&2
+    usage
+    exit 2
+  fi
+}
+
+should_remove_all=false
+
+for arg in "$@"; do
+  case $arg in
+    -- )
+      shift
+      break
+      ;;
+
+    --help )
+      full_usage
+      exit 2
+      ;;
+
+    -?* )
+      parse_short_options "${arg:1}"
+      shift
+      ;;
+
+    * )
+      break
+      ;;
+  esac
+done
+
+if [ $# -eq 0 ] && ! $should_remove_all ; then # including `git unalias --'
+  usage
+  exit 2
+fi
+
+# Parsing of arguments is over.
+# Move on to the part of removal of aliases.
+
+remove() {
+  local name=$1
+  local value
+
+  value=$(git config --global --get "alias.$name" 2> /dev/null)
+  if [ $? -eq 0 ]; then
+    git config --global --unset-all "alias.$name"
+  else
+    echo "git-unalias: $name: not found" >&2
+    has_error=true
+  fi
+}
+
+# Not only fetch the variable list
+# but validate the global `.gitconfig' file itself:
+# check if it exists and its format is valid.
+config_list=$(git config --global --list --name-only 2>&1)
+if [ $? -ne 0 ]; then
+  # The output is equivalent to an error message
+  # directly emitted by `git-config' under normal use.
+  echo "$config_list" >&2
+  exit 2
+fi
+
+has_error=false
+
+if $should_remove_all; then
+  while read -r name; do
+    remove "$name"
+  done <<< $(sed -En "s/^alias\.//p" <<< $config_list)
+else
+  for arg in "$@"; do
+    remove "$arg"
+  done
+fi
+
+if $has_error; then
+  exit 1
+fi
