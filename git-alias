@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-readonly version=0.1.2
+readonly version=0.1.3
 
 usage() {
   echo "git-alias: usage: git alias [-p] [name[=value] ... ]" >&2
@@ -115,9 +115,12 @@ stdout=""
 has_error=false
 
 if $should_print_all; then
-  while read -r name; do
-    print "$name"
-  done <<< $(sed -En "s/^alias\.//p" <<< $config_list | LANG=C sort)
+  alias_list=$(sed -En "s/^alias\.//p" <<< $config_list)
+  if [[ $alias_list ]]; then
+    while read -r name; do
+      print "$name"
+    done <<< $(LANG=C sort <<< $alias_list)
+  fi
 fi
 
 for arg in "$@"; do
